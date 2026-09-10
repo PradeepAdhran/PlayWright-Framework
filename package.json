@@ -1,0 +1,28 @@
+{
+  "name": "automation-pos-apps",
+  "version": "1.0.0",
+  "description": "POS App Mobile Automation Framework - React Native Android",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node run.js",
+    "test:uat": "ENV=uat node run.js",
+    "test:staging": "ENV=staging node run.js",
+    "appium:install": "appium driver install uiautomator2",
+    "allure:generate": "allure generate ./reports/allure-results --clean -o ./reports/allure-report",
+    "allure:open": "allure open ./reports/allure-report",
+    "allure:report": "npm run allure:generate && npm run allure:open"
+  },
+  "keywords": [],
+  "author": "Pradeep Kr. Rana",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.5.0",
+    "allure-commandline": "^2.32.0",
+    "allure-playwright": "^3.0.0",
+    "appium": "^2.19.0",
+    "appium-uiautomator2-driver": "^4.0.0",
+    "webdriverio": "^8.0.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "env": "uat",
+  "deviceName": "emulator-5554",
+  "avdName": "Automation_1200x900_API_34",
+  "platformVersion": "14",
+  "apkFile": "calculator.apk",
+  "appPackage": "org.fdroid.fdroid",
+  "appActivity": "org.fdroid.fdroid.views.main.MainActivity",
+  "apiBaseUrl": "https://api-uat.sociolla.com",
+  "credentials": {
+    "validUser": {
+      "username": "uat_user@sociolla.com",
+      "password": "uat_password"
+    },
+    "invalidUser": {
+      "username": "wrong@sociolla.com",
+      "password": "wrongpassword"
+    }
+  }
+}

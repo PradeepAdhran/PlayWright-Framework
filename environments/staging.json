@@ -1,0 +1,20 @@
+{
+  "env": "staging",
+  "deviceName": "emulator-5554",
+  "avdName": "Automation_1200x900_API_34",
+  "platformVersion": "14",
+  "apkFile": "calculator.apk",
+  "appPackage": "org.fdroid.fdroid",
+  "appActivity": "org.fdroid.fdroid.views.main.MainActivity",
+  "apiBaseUrl": "https://api-staging.sociolla.com",
+  "credentials": {
+    "validUser": {
+      "username": "staging_user@sociolla.com",
+      "password": "staging_password"
+    },
+    "invalidUser": {
+      "username": "wrong@sociolla.com",
+      "password": "wrongpassword"
+    }
+  }
+}

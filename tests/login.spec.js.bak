@@ -1,0 +1,94 @@
+const { test, expect } = require('../fixtures/appiumFixture');
+const { LoginPage } = require('../pages/LoginPage');
+const fs = require('fs');
+const path = require('path');
+
+const ENV = process.env.ENV || 'uat';
+const envConfig = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, `../environments/${ENV}.json`), 'utf-8')
+);
+
+test.describe('POS App - Login', () => {
+
+  // ─────────────────────────────────────────────────────
+  // TC-001: App opens and shows login screen
+  // ─────────────────────────────────────────────────────
+  test('TC-001: App should open and display the login screen', async ({ driver }) => {
+    const loginPage = new LoginPage(driver);
+
+    // Step 1: I launch the app and wait for the login screen to appear
+    await loginPage.waitForLoginScreen();
+
+    // Step 2: I confirm the app logo is visible — the app has fully loaded
+    const logoVisible = await loginPage.isLogoVisible();
+    expect(logoVisible).toBe(true);
+  });
+
+  // ─────────────────────────────────────────────────────
+  // TC-002: Login succeeds with valid credentials
+  // ─────────────────────────────────────────────────────
+  test('TC-002: User should login successfully with valid credentials', async ({ driver }) => {
+    const loginPage = new LoginPage(driver);
+    const { username, password } = envConfig.credentials.validUser;
+
+    // Step 1: I see the login screen is ready
+    await loginPage.waitForLoginScreen();
+
+    // Step 2: I type my username into the username field
+    await loginPage.enterUsername(username);
+
+    // Step 3: I type my password into the password field
+    await loginPage.enterPassword(password);
+
+    // Step 4: I tap the Login button
+    await loginPage.tapLogin();
+
+    // Step 5: I should land on the home/dashboard screen
+    // TODO: Replace pause with HomePage assertion once HomeLocators are added
+    await driver.pause(3000);
+  });
+
+  // ─────────────────────────────────────────────────────
+  // TC-003: Login fails with wrong credentials
+  // ─────────────────────────────────────────────────────
+  test('TC-003: User should see an error with invalid credentials', async ({ driver }) => {
+    const loginPage = new LoginPage(driver);
+    const { username, password } = envConfig.credentials.invalidUser;
+
+    // Step 1: I see the login screen
+    await loginPage.waitForLoginScreen();
+
+    // Step 2: I type a wrong username
+    await loginPage.enterUsername(username);
+
+    // Step 3: I type a wrong password
+    await loginPage.enterPassword(password);
+
+    // Step 4: I tap the Login button
+    await loginPage.tapLogin();
+
+    // Step 5: An error message appears telling me my credentials are wrong
+    const errorVisible = await loginPage.isErrorVisible();
+    expect(errorVisible).toBe(true);
+
+    const errorText = await loginPage.getErrorMessage();
+    expect(errorText.length).toBeGreaterThan(0);
+  });
+
+  // ─────────────────────────────────────────────────────
+  // TC-004: Login does not proceed with empty fields
+  // ─────────────────────────────────────────────────────
+  test('TC-004: Login should not proceed when fields are empty', async ({ driver }) => {
+    const loginPage = new LoginPage(driver);
+
+    // Step 1: I see the login screen with empty fields
+    await loginPage.waitForLoginScreen();
+
+    // Step 2: I tap Login without entering anything
+    await loginPage.tapLogin();
+
+    // Step 3: I am still on the login screen — nothing navigated away
+    const stillOnLogin = await loginPage.isLoginScreenVisible();
+    expect(stillOnLogin).toBe(true);
+  });
+});

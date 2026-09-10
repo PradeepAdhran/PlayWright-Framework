@@ -1,0 +1,19 @@
+node_modules/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Allure & reports (generated at runtime)
+/reports/allure-results/
+/reports/allure-report/
+/reports/screenshots/
+/reports/videos/
+/reports/appium.log
+.appium.pid
+
+# APK files (too large for git)
+/test-data/*.apk
