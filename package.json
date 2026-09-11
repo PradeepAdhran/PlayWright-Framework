@@ -23,6 +23,7 @@
     "allure-playwright": "^3.0.0",
     "appium": "^2.19.0",
     "appium-uiautomator2-driver": "^4.0.0",
+    "dotenv": "^17.4.2",
     "webdriverio": "^8.0.0"
   }
 }

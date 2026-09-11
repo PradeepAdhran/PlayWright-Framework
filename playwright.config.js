@@ -1,4 +1,6 @@
 // @ts-check
+require('dotenv').config(); // load .env before anything reads process.env
+
 const { defineConfig } = require('@playwright/test');
 const path = require('path');
 
@@ -7,12 +9,11 @@ module.exports = defineConfig({
   timeout: 90000,
 
   fullyParallel: false,
-  workers: process.env.WORKERS ? parseInt(process.env.WORKERS, 10) : 1,
+  workers: parseInt(process.env.WORKERS || process.env.WORKER || '1', 10),
 
   forbidOnly: !!process.env.CI,
   retries: 0,
 
-  // Appium server is started before all tests and stopped after
   globalSetup: require.resolve('./globalSetup'),
   globalTeardown: require.resolve('./globalTeardown'),
 

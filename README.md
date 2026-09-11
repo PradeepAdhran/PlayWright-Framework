@@ -112,6 +112,7 @@ npm run allure:report     # generate + open (combined)
 > source ~/.zshrc
 > ```
 > When using `ALLURE=true npm test`, `JAVA_HOME` is set automatically inside `run.js`.
+> Note: if required you can add/update your local JAVA_HOME path here
 
 ### Report artifacts
 

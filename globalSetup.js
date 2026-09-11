@@ -2,6 +2,9 @@ const { spawn, spawnSync } = require('child_process');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
+const { createLogger } = require('./utils/logger');
+
+const log = createLogger('setup');
 
 module.exports = async function globalSetup() {
   // ── Clean all previous run artifacts ──────────────────────────────
@@ -16,7 +19,7 @@ module.exports = async function globalSetup() {
     fs.rmSync(dir, { recursive: true, force: true });
     fs.mkdirSync(dir, { recursive: true });
   }
-  console.log('\n[setup] Cleared previous run reports, screenshots and videos.');
+  log.info('Cleared previous run reports, screenshots and videos.');
 
   const ENV     = process.env.ENV || 'uat';
   const WORKERS = parseInt(process.env.WORKERS || process.env.WORKER || '1', 10);
@@ -25,6 +28,8 @@ module.exports = async function globalSetup() {
   const envConfig = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, `./environments/${ENV}.json`), 'utf-8')
   );
+
+  log.debug(`Loaded env config: ${JSON.stringify({ ENV, WORKERS, HEADLESS, avdName: envConfig.avdName })}`);
 
   // Write Allure environment info
   fs.writeFileSync(
@@ -42,13 +47,14 @@ module.exports = async function globalSetup() {
   const avdPool = (envConfig.avdNames || (envConfig.avdName ? [envConfig.avdName] : [])).filter(Boolean);
 
   if (avdPool.length === 0) {
-    console.warn('[setup] No avdName/avdNames in env config — skipping emulator launch.');
+    log.warn('No avdName/avdNames in env config — skipping emulator launch.');
   } else {
     if (WORKERS > avdPool.length) {
-      throw new Error(
+      const msg =
         `WORKERS=${WORKERS} but only ${avdPool.length} AVD(s) are listed in environments/${ENV}.json → avdNames.\n` +
-        `Add more AVD names or reduce WORKERS.`
-      );
+        `Add more AVD names or reduce WORKERS.`;
+      log.error(msg);
+      throw new Error(msg);
     }
     await launchEmulators(avdPool.slice(0, WORKERS), HEADLESS);
   }
@@ -65,9 +71,9 @@ module.exports = async function globalSetup() {
   fs.writeFileSync('.appium.pid', String(appiumProcess.pid));
   appiumProcess.unref();
 
-  console.log(`\n[setup] Appium server starting (PID: ${appiumProcess.pid})...`);
+  log.info(`Appium server starting (PID: ${appiumProcess.pid})...`);
   await waitForAppium();
-  console.log('[setup] Appium server is ready.\n');
+  log.info('Appium server is ready.');
 };
 
 // ── Multi-emulator launch ──────────────────────────────────────────────────────
@@ -81,17 +87,23 @@ async function launchEmulators(avdList, headless) {
   const emulatorBin = path.join(ANDROID_HOME, 'emulator', 'emulator');
 
   if (!fs.existsSync(emulatorBin)) {
-    throw new Error(`emulator binary not found: ${emulatorBin}\nEnsure ANDROID_HOME is set.`);
+    const msg = `emulator binary not found: ${emulatorBin} — ensure ANDROID_HOME is set.`;
+    log.error(msg);
+    throw new Error(msg);
   }
+
+  log.debug(`Using adb: ${adbBin}`);
+  log.debug(`Using emulator: ${emulatorBin}`);
 
   // Kill any currently running emulators so we start fresh
   const running = listEmulators(adbBin);
   if (running.length > 0) {
-    console.log(`[setup] Stopping existing emulator(s): ${running.join(', ')}...`);
+    log.info(`Stopping existing emulator(s): ${running.join(', ')}`);
     for (const id of running) {
       spawnSync(adbBin, ['-s', id, 'emu', 'kill'], { timeout: 5000 });
     }
     await waitUntilNoEmulators(adbBin, 12000);
+    log.debug('All existing emulators stopped.');
   }
 
   const mode = headless ? 'headless (no window)' : 'windowed (visible)';
@@ -101,29 +113,27 @@ async function launchEmulators(avdList, headless) {
     const avdName = avdList[i];
     const beforeSerials = listAllEmulatorSerials(adbBin);
 
-    console.log(`[setup] [${i + 1}/${avdList.length}] Launching "${avdName}" in ${mode} mode...`);
+    log.info(`[${i + 1}/${avdList.length}] Launching "${avdName}" in ${mode} mode...`);
 
     const args = ['-avd', avdName];
     if (headless) args.push('-no-window', '-no-audio');
 
+    log.debug(`emulator args: ${args.join(' ')}`);
     spawn(emulatorBin, args, { detached: true, stdio: 'ignore' }).unref();
 
-    // Wait for this emulator process to register in adb devices
     const serial = await waitForNewEmulator(adbBin, beforeSerials, 30000);
-    console.log(`[setup] Emulator appeared as ${serial} → assigned to worker ${i}`);
+    log.info(`Emulator appeared as ${serial} → assigned to worker ${i}`);
 
     await waitForEmulatorBoot(adbBin, serial, 180000);
-    console.log(`[setup] ${serial} is fully booted.`);
+    log.info(`${serial} fully booted — worker ${i} ready.`);
 
     deviceMap[i] = serial;
   }
 
-  // Persist mapping so each Playwright worker can read its assigned device
   fs.writeFileSync('.device-map.json', JSON.stringify(deviceMap, null, 2));
-  console.log(`[setup] Device map: ${JSON.stringify(deviceMap)}`);
+  log.info(`Device map written: ${JSON.stringify(deviceMap)}`);
 }
 
-// Returns serials of emulators in ANY state (device, offline, unauthorized)
 function listAllEmulatorSerials(adbBin) {
   const out = spawnSync(adbBin, ['devices'], { encoding: 'utf-8', timeout: 5000 }).stdout || '';
   return out.split('\n')
@@ -131,7 +141,6 @@ function listAllEmulatorSerials(adbBin) {
     .map(l => l.trim().split(/\s+/)[0]);
 }
 
-// Returns serials of emulators currently in `device` (online) state
 function listEmulators(adbBin) {
   const out = spawnSync(adbBin, ['devices'], { encoding: 'utf-8', timeout: 5000 }).stdout || '';
   return out.split('\n')
@@ -147,7 +156,6 @@ async function waitUntilNoEmulators(adbBin, maxMs = 12000) {
   }
 }
 
-// Polls until a new serial appears that was not in beforeSerials
 async function waitForNewEmulator(adbBin, beforeSerials, maxMs = 30000) {
   const seen = new Set(beforeSerials);
   const deadline = Date.now() + maxMs;
@@ -156,26 +164,31 @@ async function waitForNewEmulator(adbBin, beforeSerials, maxMs = 30000) {
     const newOnes = listAllEmulatorSerials(adbBin).filter(s => !seen.has(s));
     if (newOnes.length > 0) return newOnes[0];
   }
-  throw new Error(
-    'New emulator did not appear in adb devices within 30 seconds.\n' +
-    'Check that the emulator binary and ANDROID_HOME are correct.'
-  );
+  const msg = 'New emulator did not appear in adb devices within 30 seconds after launch.';
+  log.error(msg);
+  throw new Error(msg);
 }
 
-// Polls until the specific serial is in `device` state and sys.boot_completed=1
 async function waitForEmulatorBoot(adbBin, serial, maxMs = 180000, tickMs = 3000) {
   const deadline = Date.now() + maxMs;
-  process.stdout.write(`[setup] Waiting for ${serial} boot `);
+  log.info(`Waiting for ${serial} to complete boot...`);
 
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, tickMs));
 
     const out = spawnSync(adbBin, ['devices'], { encoding: 'utf-8', timeout: 5000 }).stdout || '';
     const line = out.split('\n').find(l => l.trim().startsWith(serial));
-    if (!line) { process.stdout.write('.'); continue; }
+
+    if (!line) {
+      log.debug(`${serial} not yet visible in adb devices`);
+      continue;
+    }
 
     const state = line.trim().split(/\s+/)[1];
-    if (state !== 'device') { process.stdout.write('.'); continue; }
+    if (state !== 'device') {
+      log.debug(`${serial} state: ${state}`);
+      continue;
+    }
 
     const result = spawnSync(
       adbBin,
@@ -183,16 +196,15 @@ async function waitForEmulatorBoot(adbBin, serial, maxMs = 180000, tickMs = 3000
       { encoding: 'utf-8', timeout: 5000 }
     );
 
-    if ((result.stdout || '').trim() === '1') {
-      process.stdout.write(' done\n');
-      return;
-    }
+    const booted = (result.stdout || '').trim();
+    log.debug(`${serial} sys.boot_completed=${booted}`);
 
-    process.stdout.write('.');
+    if (booted === '1') return;
   }
 
-  process.stdout.write('\n');
-  throw new Error(`${serial} did not complete boot within 3 minutes.`);
+  const msg = `${serial} did not complete boot within 3 minutes.`;
+  log.error(msg);
+  throw new Error(msg);
 }
 
 // ── Appium health-check ────────────────────────────────────────────────────────
@@ -200,9 +212,12 @@ async function waitForEmulatorBoot(adbBin, serial, maxMs = 180000, tickMs = 3000
 async function waitForAppium(maxAttempts = 20) {
   for (let i = 0; i < maxAttempts; i++) {
     if (await checkAppium()) return;
+    log.debug(`Appium not ready yet (attempt ${i + 1}/${maxAttempts})`);
     await new Promise(r => setTimeout(r, 1000));
   }
-  throw new Error('Appium server did not start within 20 seconds. Check reports/appium.log');
+  const msg = 'Appium server did not start within 20 seconds. Check reports/appium.log';
+  log.error(msg);
+  throw new Error(msg);
 }
 
 function checkAppium() {
