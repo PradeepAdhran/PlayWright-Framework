@@ -19,6 +19,5 @@ node_modules/
 .appium.pid
 /reports/
 
-# APK files (too large for git)
-# /test-data/*.apk
-SKILLS.md
+# App binaries — too large for GitHub (>100 MB limit); place manually in test-data/
+/test-data/
