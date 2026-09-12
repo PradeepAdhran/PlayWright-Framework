@@ -20,4 +20,5 @@ node_modules/
 /reports/
 
 # App binaries — too large for GitHub (>100 MB limit); place manually in test-data/
-/test-data/
+/test-data/wdiodemoapp.apk
+SKILLS.md
