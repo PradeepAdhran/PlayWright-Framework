@@ -1,4 +1,4 @@
-# automation--apps
+# Mobile Apps Automation (Android & iOS) React Native
 
 App Mobile Automation Framework — cross-platform (Android + iOS) UI automation for the React Native app, built on Playwright Test as the runner and Appium (via WebdriverIO) as the mobile driver.
 
