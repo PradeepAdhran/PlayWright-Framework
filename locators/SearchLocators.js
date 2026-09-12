@@ -1,6 +1,18 @@
+const OS  = (process.env.OS || 'android').toLowerCase();
 const pkg = 'org.fdroid.fdroid';
 
-const SearchLocators = {
+const SearchLocators = OS === 'ios' ? {
+  // ── iOS (XCUITest) ────────────────────────────────────────────────
+  searchCard:  '-ios class chain:**/XCUIElementTypeSearchField',
+  searchInput: '-ios predicate string:type == "XCUIElementTypeSearchField"',
+  clearButton: '~Clear text',
+  backButton:  '~Back',
+  sortButton:  '~Sort',
+  appList:     '-ios class chain:**/XCUIElementTypeTable',
+  appName:     '-ios predicate string:type == "XCUIElementTypeStaticText" AND value BEGINSWITH[c] ""',
+  installBtn:  '~Install',
+} : {
+  // ── Android (UiAutomator2) ────────────────────────────────────────
   searchCard:   `android=new UiSelector().resourceId("${pkg}:id/search_card")`,
   searchInput:  `android=new UiSelector().resourceId("${pkg}:id/search")`,
   clearButton:  '~Clear search',

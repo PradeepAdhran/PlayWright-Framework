@@ -1,15 +1,24 @@
-// Locators for the Login screen
-// Use accessibility ID (~) for React Native — matches testID prop in the app code
-// Use XPath as fallback when accessibility ID is not available
+const OS = (process.env.OS || 'android').toLowerCase();
 
 const LoginLocators = {
-  usernameField:  '~username-input',
-  passwordField:  '~password-input',
-  loginButton:    '~login-button',
-  errorMessage:   '~error-message',
-  loadingSpinner: '~loading-indicator',
-  forgotPassword: '~forgot-password-link',
-  appLogo:        '~app-logo',
+  // ── Screen container ──────────────────────────────────────────────
+  loginScreen: '~Login-screen',
+
+  // ── Login / Sign-up tab toggle ────────────────────────────────────
+  btnLoginTab:  '~button-login-container',
+  btnSignupTab: '~button-sign-up-container',
+
+  // ── Form fields (content-desc shared across platforms) ───────────
+  inputEmail:    '~input-email',
+  inputPassword: '~input-password',
+
+  // ── Submit button ─────────────────────────────────────────────────
+  btnLogin: '~button-LOGIN',
+
+  // ── Alert dialog OK button ────────────────────────────────────────
+  alertOk: OS === 'ios'
+    ? '-ios predicate string:label == "OK" AND type == "XCUIElementTypeButton"'
+    : 'android=new UiSelector().text("OK")',
 };
 
 module.exports = { LoginLocators };

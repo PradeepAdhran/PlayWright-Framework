@@ -4,36 +4,42 @@ const { LoginLocators } = require('../locators/LoginLocators');
 class LoginPage extends BasePage {
 
   async waitForLoginScreen() {
-    await this.waitForElement(LoginLocators.usernameField, 20000);
+    await this.waitForElement(LoginLocators.loginScreen, 20000);
   }
 
   async isLoginScreenVisible() {
-    return await this.isElementVisible(LoginLocators.usernameField, 5000);
+    return await this.isElementVisible(LoginLocators.loginScreen, 5000);
   }
 
-  async isLogoVisible() {
-    return await this.isElementVisible(LoginLocators.appLogo, 10000);
+  async selectLoginTab() {
+    await this.tapElement(LoginLocators.btnLoginTab);
   }
 
-  async enterUsername(username) {
-    await this.typeText(LoginLocators.usernameField, username);
+  async enterEmail(email) {
+    await this.typeText(LoginLocators.inputEmail, email);
   }
 
   async enterPassword(password) {
-    await this.typeText(LoginLocators.passwordField, password);
+    await this.typeText(LoginLocators.inputPassword, password);
     await this.hideKeyboard();
   }
 
   async tapLogin() {
-    await this.tapElement(LoginLocators.loginButton);
+    await this.tapElement(LoginLocators.btnLogin);
   }
 
-  async isErrorVisible() {
-    return await this.isElementVisible(LoginLocators.errorMessage, 5000);
+  async dismissAlert() {
+    try {
+      await this.tapElement(LoginLocators.alertOk);
+    } catch { /* no alert shown */ }
   }
 
-  async getErrorMessage() {
-    return await this.getText(LoginLocators.errorMessage);
+  async login(email, password) {
+    await this.waitForLoginScreen();
+    await this.selectLoginTab();
+    await this.enterEmail(email);
+    await this.enterPassword(password);
+    await this.tapLogin();
   }
 }
 

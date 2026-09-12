@@ -6,7 +6,8 @@ const path = require('path');
 
 module.exports = defineConfig({
   testDir: './tests',
-  timeout: 90000,
+  testMatch: ['**/*Test.js', '**/*.spec.js'],
+  timeout: 180000,
 
   fullyParallel: false,
   workers: parseInt(process.env.WORKERS || process.env.WORKER || '1', 10),

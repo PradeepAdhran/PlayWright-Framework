@@ -7,15 +7,21 @@ const log = createLogger('runner');
 
 // ── Read flags ────────────────────────────────────────────────────────────────
 const ENV       = (process.env.ENV      || 'uat').toLowerCase();
+const OS        = (process.env.OS       || 'android').toLowerCase();
 const HEADLESS  = (process.env.HEADLESS || 'false').toLowerCase() === 'true';
 const ALLURE    = (process.env.ALLURE   || 'false').toLowerCase() === 'true';
 const WORKERS   = parseInt(process.env.WORKERS || process.env.WORKER || '1', 10);
 const LOG_LEVEL = (process.env.LOG_LEVEL || 'INFO').toUpperCase();
 
-const JAVA_HOME = '/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home';
+// Resolve JAVA_HOME dynamically so allure works even when shell env is stale/wrong
+const JAVA_HOME = (() => {
+  const r = spawnSync('/usr/libexec/java_home', [], { encoding: 'utf-8' });
+  return (r.stdout || '').trim() || process.env.JAVA_HOME || '';
+})();
 
 console.log('\n╔══════════════════════════════════════════╗');
 console.log(`║  ENV       : ${ENV.toUpperCase().padEnd(28)}║`);
+console.log(`║  OS        : ${OS.toUpperCase().padEnd(28)}║`);
 console.log(`║  HEADLESS  : ${String(HEADLESS).padEnd(28)}║`);
 console.log(`║  WORKERS   : ${String(WORKERS).padEnd(28)}║`);
 console.log(`║  ALLURE    : ${String(ALLURE).padEnd(28)}║`);
@@ -25,6 +31,7 @@ console.log('╚═════════════════════�
 const sharedEnv = {
   ...process.env,
   ENV,
+  OS,
   HEADLESS: String(HEADLESS),
   WORKERS:  String(WORKERS),
   LOG_LEVEL,
@@ -32,7 +39,7 @@ const sharedEnv = {
 };
 
 // ── Run Playwright tests ──────────────────────────────────────────────────────
-log.info(`Starting test run — ENV=${ENV.toUpperCase()} WORKERS=${WORKERS} HEADLESS=${HEADLESS}`);
+log.info(`Starting test run — ENV=${ENV.toUpperCase()} OS=${OS.toUpperCase()} WORKERS=${WORKERS} HEADLESS=${HEADLESS}`);
 
 const testResult = spawnSync('npx', ['playwright', 'test'], {
   stdio: 'inherit',

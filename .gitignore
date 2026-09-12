@@ -21,3 +21,4 @@ node_modules/
 
 # APK files (too large for git)
 # /test-data/*.apk
+SKILLS.md
