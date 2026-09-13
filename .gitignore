@@ -2,6 +2,11 @@ node_modules/
 
 # Environment / credentials — never commit, use .env.example as template
 .device-map.json
+.device-map-android.json
+.device-map-ios.json
+.appium-android.pid
+.appium-ios.pid
+.last-report-clear
 
 # Playwright
 /test-results/
@@ -19,5 +24,6 @@ node_modules/
 .appium.pid
 /reports/
 
-# APK files (too large for git)
-# /test-data/*.apk
+# App binaries — too large for GitHub (>100 MB limit); place manually in test-data/
+/test-data/wdiodemoapp.apk
+SKILLS.md

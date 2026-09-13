@@ -1,26 +1,28 @@
-const pkg = 'org.fdroid.fdroid';
+const OS = (process.env.OS || 'android').toLowerCase();
 
+// Accessibility IDs are shared across platforms (React Native app).
+// Android-specific resource-id selectors use android=new UiSelector().
 const HomeLocators = {
-  // Bottom navigation tabs (by content-desc)
-  tabLatest:     '~Latest',
-  tabCategories: '~Categories',
-  tabNearby:     '~Nearby',
-  tabUpdates:    '~Updates',
-  tabSettings:   '~Settings',
+  // ── Bottom navigation tabs (shared) ──────────────────────────────
+  tabHome:    '~Home',
+  tabWebview: '~Webview',
+  tabLogin:   '~Login',
+  tabForms:   '~Forms',
+  tabSwipe:   '~Swipe',
+  tabDrag:    '~Drag',
+  tabMenu:    '~Menu',
 
-  // Main content areas (by resource-id)
-  viewPager:       `android=new UiSelector().resourceId("${pkg}:id/main_view_pager")`,
-  bottomNav:       `android=new UiSelector().resourceId("${pkg}:id/bottom_navigation")`,
-  swipeRefresh:    `android=new UiSelector().resourceId("${pkg}:id/swipe_to_refresh")`,
-  fabSearch:       `android=new UiSelector().resourceId("${pkg}:id/fab_search")`,
-  emptyState:      `android=new UiSelector().resourceId("${pkg}:id/empty_state")`,
+  // ── Home screen container (shared) ───────────────────────────────
+  homeScreen: '~Home-screen',
 
-  // Tab content panels
-  panelLatest:     `android=new UiSelector().resourceId("${pkg}:id/latest")`,
-  panelCategories: `android=new UiSelector().resourceId("${pkg}:id/categories")`,
-  panelNearby:     `android=new UiSelector().resourceId("${pkg}:id/nearby")`,
-  panelUpdates:    `android=new UiSelector().resourceId("${pkg}:id/updates")`,
-  panelSettings:   `android=new UiSelector().resourceId("${pkg}:id/settings")`,
+  // ── App header text (Android uses text matcher, iOS predicate) ───
+  appTitle: OS === 'ios'
+    ? '-ios predicate string:label == "WEBDRIVER"'
+    : 'android=new UiSelector().text("WEBDRIVER")',
+
+  appSubtitle: OS === 'ios'
+    ? '-ios predicate string:label == "Demo app for the appium-boilerplate"'
+    : 'android=new UiSelector().text("Demo app for the appium-boilerplate")',
 };
 
 module.exports = { HomeLocators };

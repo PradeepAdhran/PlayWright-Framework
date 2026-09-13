@@ -4,47 +4,31 @@ const { HomeLocators } = require('../locators/HomeLocators');
 class HomePage extends BasePage {
 
   async waitForHomeScreen() {
-    await this.waitForElement(HomeLocators.bottomNav, 20000);
+    await this.waitForElement(HomeLocators.homeScreen, 20000);
   }
 
   async isHomeScreenVisible() {
-    return await this.isElementVisible(HomeLocators.bottomNav, 10000);
+    return await this.isElementVisible(HomeLocators.homeScreen, 10000);
   }
 
-  async tapLatestTab() {
-    await this.tapElement(HomeLocators.tabLatest);
+  async isAppTitleVisible() {
+    return await this.isElementVisible(HomeLocators.appTitle, 5000);
   }
 
-  async tapCategoriesTab() {
-    await this.tapElement(HomeLocators.tabCategories);
-  }
+  // ── Bottom nav tab actions ──────────────────────────────────────────
 
-  async tapNearbyTab() {
-    await this.tapElement(HomeLocators.tabNearby);
-  }
+  async tapHomeTab()    { await this.tapElement(HomeLocators.tabHome); }
+  async tapWebviewTab() { await this.tapElement(HomeLocators.tabWebview); }
+  async tapLoginTab()   { await this.tapElement(HomeLocators.tabLogin); }
+  async tapFormsTab()   { await this.tapElement(HomeLocators.tabForms); }
+  async tapSwipeTab()   { await this.tapElement(HomeLocators.tabSwipe); }
+  async tapDragTab()    { await this.tapElement(HomeLocators.tabDrag); }
+  async tapMenuTab()    { await this.tapElement(HomeLocators.tabMenu); }
 
-  async tapUpdatesTab() {
-    await this.tapElement(HomeLocators.tabUpdates);
-  }
+  // ── Tab visibility checks ───────────────────────────────────────────
 
-  async tapSettingsTab() {
-    await this.tapElement(HomeLocators.tabSettings);
-  }
-
-  async tapSearchFab() {
-    await this.tapElement(HomeLocators.fabSearch);
-  }
-
-  async isLatestPanelVisible() {
-    return await this.isElementVisible(HomeLocators.panelLatest, 5000);
-  }
-
-  async isCategoriesPanelVisible() {
-    return await this.isElementVisible(HomeLocators.panelCategories, 5000);
-  }
-
-  async isUpdatesPanelVisible() {
-    return await this.isElementVisible(HomeLocators.panelUpdates, 5000);
+  async isTabVisible(tabLocator) {
+    return await this.isElementVisible(tabLocator, 5000);
   }
 }
 

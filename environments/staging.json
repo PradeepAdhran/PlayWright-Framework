@@ -1,20 +1,42 @@
 {
   "env": "staging",
-  "deviceName": "emulator-5554",
-  "avdName": "Automation_1200x900_API_34",
-  "platformVersion": "14",
-  "apkFile": "calculator.apk",
-  "appPackage": "org.fdroid.fdroid",
-  "appActivity": "org.fdroid.fdroid.views.main.MainActivity",
-  "apiBaseUrl": "https://api-staging.sociolla.com",
+  "apiBaseUrl": "https://api-staging.example.com",
   "credentials": {
     "validUser": {
-      "username": "staging_user@sociolla.com",
-      "password": "staging_password"
+      "username": "alice@example.com",
+      "password": "10203040"
     },
     "invalidUser": {
-      "username": "wrong@sociolla.com",
+      "username": "wrong@example.com",
       "password": "wrongpassword"
     }
+  },
+  "android": {
+    "deviceName": "emulator-5554",
+    "platformVersion": "14",
+    "avdName": "Automation_1200x900_API_34",
+    "avdNames": [
+      "Automation_1200x900_API_34",
+      "Automation_1280x950_API_34_1",
+      "Automation_1280x950_API_34_2",
+      "Automation_1280x950_API_34_3",
+      "Automation_1280x950_API_34_4",
+      "Automation_1280x950_API_34_5"
+    ],
+    "apkFile": "wdiodemoapp.apk",
+    "appPackage": "com.wdiodemoapp",
+    "appActivity": "com.wdiodemoapp.MainActivity"
+  },
+  "ios": {
+    "simulatorName": "iPhone 17",
+    "platformVersion": "26.5",
+    "simulatorNames": [
+      "iPhone 17",
+      "iPhone 17 Pro",
+      "iPhone 17 Pro Max",
+      "iPhone Air"
+    ],
+    "appFile": "wdiodemoapp.app",
+    "bundleId": "org.wdiodemoapp"
   }
 }
