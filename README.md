@@ -31,13 +31,11 @@ fixtures/
 locators/
   HomeLocators.js     element selectors for the Home screen
   LoginLocators.js    element selectors for the Login screen
-  SearchLocators.js   element selectors for the Search screen
 
 pages/
   BasePage.js         shared helpers (wait, tap, type, scroll…)
   HomePage.js         home screen actions / assertions
   LoginPage.js        login screen actions / assertions
-  SearchPage.js       search screen actions / assertions
 
 tests/
   homeTest.js         TC-001–TC-006: app launch, navigation tabs
@@ -51,16 +49,17 @@ globalTeardown.js     stop Appium → kill emulator / shutdown simulator
 playwright.config.js  Playwright configuration (workers, timeout, reporters)
 run.js                CLI entry-point — reads flags, runs Playwright, opens Allure
 
-test-data/
+test-data/            app binaries — not committed to git, place manually (see below)
   wdiodemoapp.apk     Android build
-  wdiodemoapp.app     iOS build
+  wdiodemoapp.app     iOS simulator build
 
 reports/              generated per run (wiped at start of each run)
   allure-results/
   allure-report/
   screenshots/
   videos/
-  appium.log
+  appium-android.log
+  appium-ios.log
   run.log
 ```
 
@@ -82,6 +81,34 @@ reports/              generated per run (wiped at start of each run)
 
 ---
 
+## Download app builds
+
+App binaries are **not included in this repo** (too large for GitHub). Download them from the official WDIO Demo App releases page:
+
+**https://github.com/webdriverio/native-demo-app/releases**
+
+### Steps
+
+1. Go to the releases page above and open the latest release.
+2. Under **Assets**, download:
+   - `wdio-native-app-v<version>.apk` → for Android
+   - `wdio-native-app-v<version>.app.zip` → for iOS (unzip after downloading)
+3. Create the `test-data/` folder in the project root if it doesn't exist:
+   ```bash
+   mkdir -p test-data
+   ```
+4. Copy/move the downloaded files into `test-data/` and rename them:
+
+   ```
+   test-data/
+     wdiodemoapp.apk        ← renamed from wdio-native-app-v<version>.apk
+     wdiodemoapp.app        ← renamed from the unzipped .app folder
+   ```
+
+> The filenames must match exactly what is set in `environments/uat.json` (`apkFile` for Android, `appFile` for iOS). The defaults are `wdiodemoapp.apk` and `wdiodemoapp.app`.
+
+---
+
 ## Setup
 
 ```bash
@@ -95,10 +122,6 @@ npm run appium:install:ios      # iOS only
 # Copy credentials template and fill in real values
 cp .env.example .env
 ```
-
-Place app builds in `test-data/`:
-- `test-data/wdiodemoapp.apk` — Android
-- `test-data/wdiodemoapp.app` — iOS
 
 ---
 
@@ -162,10 +185,10 @@ All tests run through `run.js` via `npm test`. Flags are passed as environment v
 | `ALLURE` | `true` \| `false` | `false` | Auto-generate and open Allure report after the run |
 | `LOG_LEVEL` | `DEBUG` \| `INFO` \| `WARN` \| `ERROR` | `INFO` | Console + file log verbosity |
 
-### Examples
+### Single platform
 
 ```bash
-# Android — visible emulator, UAT, 1 worker, open Allure after run
+# Android — visible emulator, UAT, open Allure after run
 OS=android ENV=uat HEADLESS=false WORKERS=1 ALLURE=true npm test
 
 # Android — headless, staging, 2 parallel workers (needs 2 AVDs in avdNames)
@@ -179,39 +202,47 @@ OS=ios ENV=uat HEADLESS=true WORKERS=1 ALLURE=true npm test
 
 # Debug logging
 OS=android ENV=uat LOG_LEVEL=DEBUG npm test
-
-# Shorthand scripts (ENV only, other flags use defaults)
-npm run test:uat
-npm run test:staging
 ```
+
+### Android + iOS at the same time
+
+Both platforms run in true parallel — Android uses Appium port `4723`, iOS uses port `4724`. Each has its own device map and PID file so they never interfere.
+
+```bash
+# Run both simultaneously in background, then open combined Allure report
+OS=android ENV=uat HEADLESS=false WORKERS=1 node run.js &
+OS=ios     ENV=uat HEADLESS=false WORKERS=1 node run.js &
+wait
+npm run allure:report
+```
+
+The combined Allure report shows all 20 tests (10 Android + 10 iOS) in one view. Use the platform filter inside the Allure UI to separate them.
 
 ### Run a single test file
 
 ```bash
 OS=android ENV=uat npx playwright test tests/homeTest.js
-OS=ios ENV=uat npx playwright test tests/loginTest.js
+OS=ios     ENV=uat npx playwright test tests/loginTest.js
 ```
 
-### Parallel workers
+### Parallel workers (multiple devices per platform)
 
-Each worker gets its own dedicated device. The device pool comes from `avdNames` (Android) or `simulatorNames` (iOS) in the environment config. `WORKERS=N` requires at least N entries in the pool.
+Each worker gets its own dedicated device from the pool.
 
 ```bash
-# 3 parallel Android workers — needs 3 AVDs in environments/uat.json → android.avdNames
-OS=android WORKERS=3 npm test
+# 2 parallel Android workers — needs 2 AVDs listed in environments/uat.json → android.avdNames
+OS=android WORKERS=2 npm test
 ```
 
 ---
 
 ## Reports
 
-Reports are **wiped at the start of every run** — nothing stale accumulates.
-
 ```bash
 # Auto-generate + open after tests (recommended)
 ALLURE=true npm test
 
-# Manually after a run
+# Manually after a run (or after a parallel Android+iOS run)
 npm run allure:generate   # build HTML report from allure-results/
 npm run allure:open       # open the last generated report in browser
 npm run allure:report     # generate + open (combined)
@@ -225,8 +256,11 @@ npm run allure:report     # generate + open (combined)
 | `reports/allure-report/` | Generated HTML report | After `allure:generate` |
 | `reports/screenshots/` | End-of-test screenshot (PNG) | Every test |
 | `reports/videos/` | Screen recording (MP4) | Failed tests only |
-| `reports/appium.log` | Appium server stdout | Every run |
+| `reports/appium-android.log` | Android Appium server stdout | Android runs |
+| `reports/appium-ios.log` | iOS Appium server stdout | iOS runs |
 | `reports/run.log` | Structured runner log | Every run |
+
+> When running Android and iOS simultaneously, reports from both platforms are merged into the same `allure-results/` folder. The second platform to start skips the clean step automatically so neither overwrites the other's results.
 
 ---
 
@@ -234,7 +268,7 @@ npm run allure:report     # generate + open (combined)
 
 Both suites run on Android and iOS without modification — locators use shared React Native accessibility IDs (`~`).
 
-### `tests/home.spec.js` — Home & Navigation
+### `tests/homeTest.js` — Home & Navigation
 
 | Test | Description |
 |------|-------------|
@@ -245,7 +279,7 @@ Both suites run on Android and iOS without modification — locators use shared 
 | TC-005 | Tapping Forms tab opens the forms screen |
 | TC-006 | Tapping Home tab from another tab returns to home |
 
-### `tests/login.spec.js` — Login
+### `tests/loginTest.js` — Login
 
 | Test | Description |
 |------|-------------|
