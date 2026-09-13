@@ -1,6 +1,6 @@
 # Mobile Apps Automation (Android & iOS) React Native
 
-Cross-platform mobile automation framework for the **WDIO Demo App** (React Native / Expo), built on **Playwright Test** as the runner and **Appium 2** (via WebdriverIO) as the mobile driver. Supports Android and iOS with a shared Page Object Model, parallel workers, structured logging, and Allure HTML reports.
+Cross-platform mobile automation framework for the **WDIO Demo App** (React Native / Expo), built on **Playwright Test** as the runner and **Appium 3** (via WebdriverIO) as the mobile driver. Supports Android and iOS with a shared Page Object Model, parallel workers, structured logging, and Allure HTML reports.
 
 ---
 
@@ -9,7 +9,7 @@ Cross-platform mobile automation framework for the **WDIO Demo App** (React Nati
 | Layer | Tool |
 |-------|------|
 | Test runner | Playwright Test (`@playwright/test`) |
-| Mobile driver | Appium 2 via WebdriverIO `remote()` |
+| Mobile driver | Appium 3 via WebdriverIO `remote()` |
 | Android driver | `appium-uiautomator2-driver` |
 | iOS driver | `appium-xcuitest-driver` |
 | Reports | `allure-playwright` + `allure-commandline` |
@@ -89,20 +89,37 @@ App binaries are **not included in this repo** (too large for GitHub). Download 
 
 ### Steps
 
-1. Go to the releases page above and open the latest release.
-2. Under **Assets**, download:
-   - `wdio-native-app-v<version>.apk` → for Android
-   - `wdio-native-app-v<version>.app.zip` → for iOS (unzip after downloading)
-3. Create the `test-data/` folder in the project root if it doesn't exist:
+1. Open the link above and click the **latest release**.
+
+2. Scroll down to the **Assets** section and download both files:
+
+   | File to download | Platform |
+   |-----------------|----------|
+   | `wdio-native-app-v<version>.apk` | Android |
+   | `wdio-native-app-v<version>.app.zip` | iOS (zip — unzip after downloading) |
+
+3. Create the `test-data/` folder in the project root if it does not exist:
+
    ```bash
    mkdir -p test-data
    ```
-4. Copy/move the downloaded files into `test-data/` and rename them:
+
+4. Move the downloaded files into `test-data/` and **rename them exactly** as shown:
 
    ```
    test-data/
-     wdiodemoapp.apk        ← renamed from wdio-native-app-v<version>.apk
-     wdiodemoapp.app        ← renamed from the unzipped .app folder
+     wdiodemoapp.apk          ← rename from: wdio-native-app-v<version>.apk
+     wdiodemoapp.app          ← rename from: the unzipped .app folder
+   ```
+
+   > On macOS the `.app.zip` extracts to a folder named `wdio-native-app-v<version>.app` — rename that folder to `wdiodemoapp.app` and move it into `test-data/`.
+
+5. Verify the final structure:
+
+   ```bash
+   ls test-data/
+   # wdiodemoapp.apk
+   # wdiodemoapp.app
    ```
 
 > The filenames must match exactly what is set in `environments/uat.json` (`apkFile` for Android, `appFile` for iOS). The defaults are `wdiodemoapp.apk` and `wdiodemoapp.app`.
@@ -174,24 +191,38 @@ Device pool, app identifiers, and fallback credentials per environment.
 
 ## Running tests
 
-All tests run through `run.js` via `npm test`. Flags are passed as environment variables.
+### npm scripts (recommended)
+
+| Script | What it runs |
+|--------|-------------|
+| `npm run test:android` | Android only, UAT |
+| `npm run test:ios` | iOS only, UAT |
+| `npm run test:all` | **Android + iOS simultaneously**, combined Allure report |
+| `npm run test:all:uat` | Android + iOS simultaneously, UAT |
+| `npm run test:all:staging` | Android + iOS simultaneously, Staging |
+| `npm run test:uat` | Android only (default OS), UAT |
+| `npm run test:staging` | Android only (default OS), Staging |
+
+### Environment flag reference
+
+All tests run through `run.js`. Extra flags are passed as environment variables.
 
 | Flag | Values | Default | Description |
 |------|--------|---------|-------------|
 | `ENV` | `uat` \| `staging` | `uat` | Which environment config to load |
 | `OS` | `android` \| `ios` | `android` | Target platform |
-| `HEADLESS` | `true` \| `false` | `false` | Hide device window (`true`) or show it (`false`) |
-| `WORKERS` | `1`, `2`, `3`… | `1` | Parallel workers — each worker gets its own device from the pool |
-| `ALLURE` | `true` \| `false` | `false` | Auto-generate and open Allure report after the run |
-| `LOG_LEVEL` | `DEBUG` \| `INFO` \| `WARN` \| `ERROR` | `INFO` | Console + file log verbosity |
+| `HEADLESS` | `true` \| `false` | `false` | Hide device window |
+| `WORKERS` | `1`, `2`, `3`… | `1` | Parallel workers — one device per worker |
+| `ALLURE` | `true` \| `false` | `false` | Auto-open Allure report after run |
+| `LOG_LEVEL` | `DEBUG` \| `INFO` \| `WARN` \| `ERROR` | `INFO` | Log verbosity |
 
-### Single platform
+### Single platform examples
 
 ```bash
 # Android — visible emulator, UAT, open Allure after run
 OS=android ENV=uat HEADLESS=false WORKERS=1 ALLURE=true npm test
 
-# Android — headless, staging, 2 parallel workers (needs 2 AVDs in avdNames)
+# Android — headless, staging, 2 parallel workers
 OS=android ENV=staging HEADLESS=true WORKERS=2 npm test
 
 # iOS — visible simulator, UAT
@@ -204,19 +235,23 @@ OS=ios ENV=uat HEADLESS=true WORKERS=1 ALLURE=true npm test
 OS=android ENV=uat LOG_LEVEL=DEBUG npm test
 ```
 
-### Android + iOS at the same time
+### Android + iOS simultaneously
 
 Both platforms run in true parallel — Android uses Appium port `4723`, iOS uses port `4724`. Each has its own device map and PID file so they never interfere.
 
 ```bash
-# Run both simultaneously in background, then open combined Allure report
-OS=android ENV=uat HEADLESS=false WORKERS=1 node run.js &
-OS=ios     ENV=uat HEADLESS=false WORKERS=1 node run.js &
-wait
-npm run allure:report
+# Easiest — single command, opens combined Allure report when both finish
+npm run test:all
+
+# With explicit environment
+npm run test:all:uat
+npm run test:all:staging
+
+# Manual equivalent (same as test:all:uat)
+OS=android ENV=uat node run.js & OS=ios ENV=uat node run.js & wait && npm run allure:report
 ```
 
-The combined Allure report shows all 20 tests (10 Android + 10 iOS) in one view. Use the platform filter inside the Allure UI to separate them.
+The combined Allure report shows all 20 tests (10 Android + 10 iOS) in one view.
 
 ### Run a single test file
 
@@ -227,10 +262,8 @@ OS=ios     ENV=uat npx playwright test tests/loginTest.js
 
 ### Parallel workers (multiple devices per platform)
 
-Each worker gets its own dedicated device from the pool.
-
 ```bash
-# 2 parallel Android workers — needs 2 AVDs listed in environments/uat.json → android.avdNames
+# 2 parallel Android workers — needs 2 AVDs in environments/uat.json → android.avdNames
 OS=android WORKERS=2 npm test
 ```
 
@@ -239,12 +272,12 @@ OS=android WORKERS=2 npm test
 ## Reports
 
 ```bash
-# Auto-generate + open after tests (recommended)
+# Auto-open after tests
 ALLURE=true npm test
 
-# Manually after a run (or after a parallel Android+iOS run)
+# Manually after a run
 npm run allure:generate   # build HTML report from allure-results/
-npm run allure:open       # open the last generated report in browser
+npm run allure:open       # open in browser
 npm run allure:report     # generate + open (combined)
 ```
 
@@ -260,7 +293,7 @@ npm run allure:report     # generate + open (combined)
 | `reports/appium-ios.log` | iOS Appium server stdout | iOS runs |
 | `reports/run.log` | Structured runner log | Every run |
 
-> When running Android and iOS simultaneously, reports from both platforms are merged into the same `allure-results/` folder. The second platform to start skips the clean step automatically so neither overwrites the other's results.
+> When running Android and iOS simultaneously, both platforms write to the same `allure-results/` folder. The second platform to start skips the clean step automatically so neither overwrites the other's results.
 
 ---
 

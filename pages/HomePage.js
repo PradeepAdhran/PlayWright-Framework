@@ -4,11 +4,11 @@ const { HomeLocators } = require('../locators/HomeLocators');
 class HomePage extends BasePage {
 
   async waitForHomeScreen() {
-    await this.waitForElement(HomeLocators.homeScreen, 20000);
+    await this.waitForElement(HomeLocators.homeScreen, 90000);
   }
 
   async isHomeScreenVisible() {
-    return await this.isElementVisible(HomeLocators.homeScreen, 10000);
+    return await this.isElementVisible(HomeLocators.homeScreen, 20000);
   }
 
   async isAppTitleVisible() {

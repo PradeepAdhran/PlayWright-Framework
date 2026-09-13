@@ -69,8 +69,8 @@ test.describe('WDIO Demo App — Login', () => {
     // Step 2: Tap LOGIN
     await login.tapLogin();
 
-    // Step 3: An error alert is displayed (iOS login requests can be slow — allow 15s)
-    const alertVisible = await login.isElementVisible(LoginLocators.alertOk, 15000);
+    // Step 3: An error alert is displayed (iOS login requests can be slow under load — allow 30s)
+    const alertVisible = await login.isElementVisible(LoginLocators.alertOk, 30000);
     expect(alertVisible).toBe(true);
 
     // Step 4: Dismiss the alert

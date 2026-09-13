@@ -131,16 +131,21 @@ async function launchAndroidEmulators(platformConfig, workers, headless, env, os
     throw new Error(`emulator binary not found: ${emulatorBin} — set ANDROID_HOME correctly.`);
   }
 
-  // Kill any running emulators so we start fresh with the right flags
-  const running = listAndroidDevices(adbBin, true);
-  if (running.length > 0) {
-    log.info(`Stopping existing emulator(s): ${running.join(', ')}`);
-    for (const id of running) {
+  // Kill ALL emulator serials (online or offline) so we start with a clean slate.
+  // listAllAndroidSerials matches any emulator-XXXX line regardless of ADB state,
+  // which catches emulators left behind by a previous run that failed during teardown.
+  const allSerials = listAllAndroidSerials(adbBin);
+  if (allSerials.length > 0) {
+    log.info(`Stopping existing emulator(s): ${allSerials.join(', ')}`);
+    for (const id of allSerials) {
       spawnSync(adbBin, ['-s', id, 'emu', 'kill'], { timeout: 5000 });
     }
-    // Wait until fully deregistered from ADB before taking the "before" snapshot
-    await waitUntilNoAndroidEmulators(adbBin, 20000);
   }
+  // pkill covers orphaned emulator processes not yet visible in ADB.
+  // On macOS the binary path contains 'sdk/emulator/emulator'.
+  spawnSync('pkill', ['-f', 'sdk/emulator/emulator'], { timeout: 3000 });
+  // Wait until fully deregistered from ADB before taking the "before" snapshot
+  await waitUntilNoAndroidEmulators(adbBin, 60000);
 
   const mode = headless ? 'headless (no window)' : 'windowed (visible)';
   const deviceMap = {};
@@ -160,8 +165,25 @@ async function launchAndroidEmulators(platformConfig, workers, headless, env, os
     const serial = await waitForNewAndroidEmulator(adbBin, before, 90000);
     log.info(`Emulator appeared as ${serial} → worker ${i}`);
 
-    await waitForAndroidBoot(adbBin, serial, 180000);
+    await waitForAndroidBoot(adbBin, serial, 300000);
     log.info(`${serial} fully booted — worker ${i} ready.`);
+
+    // Pre-install APK so each session skips the reinstall step (noReset:true)
+    const apkPath = path.resolve(__dirname, `./test-data/${platformConfig.apkFile}`);
+    if (fs.existsSync(apkPath)) {
+      log.info(`Pre-installing ${platformConfig.apkFile} on ${serial}...`);
+      const install = spawnSync(adbBin, ['-s', serial, 'install', '-r', '-t', apkPath], {
+        timeout: 120000,
+        encoding: 'utf-8',
+      });
+      if (install.error) {
+        log.warn(`APK pre-install failed: ${install.error.message}`);
+      } else {
+        log.info(`APK pre-installed on ${serial}.`);
+      }
+    } else {
+      log.warn(`APK not found at ${apkPath} — skipping pre-install.`);
+    }
 
     deviceMap[i] = serial;
   }
@@ -203,7 +225,7 @@ async function waitForNewAndroidEmulator(adbBin, beforeSerials, maxMs) {
     const newOnes = listAllAndroidSerials(adbBin).filter(s => !seen.has(s));
     if (newOnes.length > 0) return newOnes[0];
   }
-  throw new Error('New Android emulator did not appear in adb devices within 30 seconds.');
+  throw new Error(`New Android emulator did not appear in adb devices within ${maxMs / 1000} seconds.`);
 }
 
 async function waitForAndroidBoot(adbBin, serial, maxMs, tickMs = 3000) {
@@ -218,7 +240,7 @@ async function waitForAndroidBoot(adbBin, serial, maxMs, tickMs = 3000) {
     if ((result.stdout || '').trim() === '1') return;
     log.debug(`${serial} boot_completed=0, waiting...`);
   }
-  throw new Error(`${serial} did not boot within 3 minutes.`);
+  throw new Error(`${serial} did not boot within ${maxMs / 60000} minutes.`);
 }
 
 // ── iOS simulator management ───────────────────────────────────────────────────
@@ -266,7 +288,7 @@ async function launchIOSSimulators(platformConfig, workers, headless, env, os) {
 
     spawnSync('xcrun', ['simctl', 'boot', sim.udid], { timeout: 30000, encoding: 'utf-8' });
 
-    await waitForSimulatorBoot(sim.udid, 60000);
+    await waitForSimulatorBoot(sim.udid, 120000);
     log.info(`${simName} (${sim.udid.slice(0, 8)}) booted — worker ${i} ready.`);
 
     // Pre-install app so Appium sessions skip the slow cold-install step

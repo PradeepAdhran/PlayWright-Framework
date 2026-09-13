@@ -57,23 +57,17 @@ const test = base.extend({
       port: APPIUM_PORT,
       path: '/',
       logLevel: 'warn',
+      connectionRetryTimeout: 300000,
+      connectionRetryCount: 1,
       capabilities,
     });
 
     log.debug(`[worker:${workerIndex}] Session created — dismissing permission dialogs`);
     await dismissPermissionDialogs(driver, OS, workerIndex);
 
-    // iOS with noReset:true persists React Native navigation state between launches.
-    // Force terminate + reactivate to get a clean app launch, then navigate to Home.
+    // iOS: shouldTerminateApp:true in capabilities handles the terminate+relaunch
+    // at session creation time. We still navigate to Home to reset nav state.
     if (OS === 'ios') {
-      try {
-        await driver.terminateApp(platformConfig.bundleId);
-        await driver.pause(1000);
-        await driver.activateApp(platformConfig.bundleId);
-        await driver.pause(2000);
-      } catch (err) {
-        log.warn(`[worker:${workerIndex}] App terminate/reactivate failed: ${err.message}`);
-      }
       // Dismiss keyboard if still present from previous session
       try { await driver.hideKeyboard(); } catch { /* no keyboard */ }
       // Navigate to Home tab to ensure known start state
@@ -140,14 +134,17 @@ function buildAndroidCapabilities(deviceSerial) {
     platformName: 'Android',
     'appium:deviceName':       deviceSerial,
     'appium:platformVersion':  platformConfig.platformVersion,
-    'appium:app':              path.resolve(__dirname, `../test-data/${platformConfig.apkFile}`),
+    // No 'app' capability: APK pre-installed by globalSetup. Without 'app', UiAutomator2
+    // skips install but still force-stops + restarts the app via appPackage/appActivity,
+    // guaranteeing a clean state for every session.
     'appium:automationName':   'UiAutomator2',
     'appium:appPackage':       platformConfig.appPackage,
     'appium:appActivity':      platformConfig.appActivity,
-    'appium:noReset':          false,
-    'appium:fullReset':        false,
     'appium:newCommandTimeout': 90000,
     'appium:autoGrantPermissions': true,
+    // Under parallel iOS+Android load, UiAutomator2 server needs extra time to initialize
+    'appium:uiautomator2ServerLaunchTimeout': 60000,
+    'appium:uiautomator2ServerInstallTimeout': 60000,
   };
 }
 
@@ -161,8 +158,14 @@ function buildIOSCapabilities(udid) {
     'appium:automationName':   'XCUITest',
     // App pre-installed by globalSetup; noReset skips per-session reinstall for speed
     'appium:noReset':          true,
+    // Terminate any running app instance at session start (XCUITest handles it
+    // internally during session creation, covered by the 5-min connectionRetryTimeout)
+    'appium:shouldTerminateApp': true,
     'appium:newCommandTimeout': 90000,
     'appium:autoAcceptAlerts': true,
+    // Under parallel Android+iOS load, WDA needs extra time to start and connect
+    'appium:wdaLaunchTimeout':    180000,
+    'appium:wdaConnectionTimeout': 180000,
   };
 }
 
