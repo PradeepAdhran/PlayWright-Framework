@@ -28,14 +28,21 @@ console.log(`║  ALLURE    : ${String(ALLURE).padEnd(28)}║`);
 console.log(`║  LOG_LEVEL : ${LOG_LEVEL.padEnd(28)}║`);
 console.log('╚══════════════════════════════════════════╝\n');
 
+// Assign platform-specific Appium port so Android and iOS can run simultaneously
+// Android → 4723, iOS → 4724 (override with APPIUM_PORT env var if needed)
+const APPIUM_PORT = process.env.APPIUM_PORT
+  ? parseInt(process.env.APPIUM_PORT, 10)
+  : OS === 'ios' ? 4724 : 4723;
+
 const sharedEnv = {
   ...process.env,
   ENV,
   OS,
-  HEADLESS: String(HEADLESS),
-  WORKERS:  String(WORKERS),
+  HEADLESS:     String(HEADLESS),
+  WORKERS:      String(WORKERS),
   LOG_LEVEL,
   JAVA_HOME,
+  APPIUM_PORT:  String(APPIUM_PORT),
 };
 
 // ── Run Playwright tests ──────────────────────────────────────────────────────

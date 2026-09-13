@@ -8,8 +8,9 @@ const { createLogger } = require('../utils/logger');
 
 const log = createLogger('driver');
 
-const ENV = process.env.ENV || 'uat';
-const OS  = (process.env.OS || 'android').toLowerCase();
+const ENV         = process.env.ENV || 'uat';
+const OS          = (process.env.OS || 'android').toLowerCase();
+const APPIUM_PORT = parseInt(process.env.APPIUM_PORT || (OS === 'ios' ? '4724' : '4723'), 10);
 
 const envConfig = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, `../environments/${ENV}.json`), 'utf-8')
@@ -33,8 +34,8 @@ const credentials = {
 // Extend Playwright's test with a `driver` fixture (Appium session)
 const test = base.extend({
   driver: async ({}, use, testInfo) => {
-    // Each Playwright worker gets its own device via the device map written by globalSetup
-    const deviceMapPath = path.resolve(__dirname, '../.device-map.json');
+    // Each Playwright worker gets its own device via the OS-specific device map written by globalSetup
+    const deviceMapPath = path.resolve(__dirname, `../.device-map-${OS}.json`);
     const deviceMap = fs.existsSync(deviceMapPath)
       ? JSON.parse(fs.readFileSync(deviceMapPath, 'utf-8'))
       : { 0: platformConfig.deviceName || platformConfig.simulatorName };
@@ -53,7 +54,7 @@ const test = base.extend({
     const driver = await remote({
       protocol: 'http',
       hostname: '127.0.0.1',
-      port: 4723,
+      port: APPIUM_PORT,
       path: '/',
       logLevel: 'warn',
       capabilities,

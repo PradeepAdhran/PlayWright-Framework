@@ -9,20 +9,22 @@ module.exports = async function globalTeardown() {
   const OS = (process.env.OS || 'android').toLowerCase();
 
   // ── Stop Appium server ─────────────────────────────────────────────
+  const pidFile = `.appium-${OS}.pid`;
   try {
-    const pid = parseInt(fs.readFileSync('.appium.pid', 'utf-8'), 10);
+    const pid = parseInt(fs.readFileSync(pidFile, 'utf-8'), 10);
     process.kill(pid, 'SIGKILL');
-    fs.unlinkSync('.appium.pid');
+    fs.unlinkSync(pidFile);
     log.info(`Appium server stopped (PID: ${pid})`);
   } catch (err) {
     log.warn(`Could not stop Appium — already stopped or PID file missing. (${err.message})`);
   }
 
   // ── Stop devices launched by globalSetup ──────────────────────────
-  if (!fs.existsSync('.device-map.json')) {
+  const deviceMapFile = `.device-map-${OS}.json`;
+  if (!fs.existsSync(deviceMapFile)) {
     log.info('No device map found — skipping device teardown.');
   } else {
-    const deviceMap = JSON.parse(fs.readFileSync('.device-map.json', 'utf-8'));
+    const deviceMap = JSON.parse(fs.readFileSync(deviceMapFile, 'utf-8'));
     const ids = Object.values(deviceMap);
 
     if (ids.length > 0) {
@@ -33,7 +35,7 @@ module.exports = async function globalTeardown() {
       }
     }
 
-    try { fs.unlinkSync('.device-map.json'); } catch { /* already gone */ }
+    try { fs.unlinkSync(deviceMapFile); } catch { /* already gone */ }
     log.debug('Device map file removed.');
   }
 

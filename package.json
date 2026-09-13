@@ -1,7 +1,7 @@
 {
-  "name": "automation-pos-apps",
+  "name": "automation-apps",
   "version": "1.0.0",
-  "description": "POS App Mobile Automation Framework - React Native Android",
+  "description": "Apps Mobile Automation Framework - React Native Android & iOS",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {

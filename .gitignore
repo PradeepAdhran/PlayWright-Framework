@@ -2,6 +2,11 @@ node_modules/
 
 # Environment / credentials — never commit, use .env.example as template
 .device-map.json
+.device-map-android.json
+.device-map-ios.json
+.appium-android.pid
+.appium-ios.pid
+.last-report-clear
 
 # Playwright
 /test-results/
