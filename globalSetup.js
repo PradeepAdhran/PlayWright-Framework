@@ -22,7 +22,7 @@ module.exports = async function globalSetup() {
     : 0;
   if (Date.now() - lastClear > 60000) {
     const cleanDirs = [
-      './reports/allure-results',
+      './reports/allure/results',
       './reports/allure-report',
       './reports/screenshots',
       './reports/videos',
@@ -37,7 +37,7 @@ module.exports = async function globalSetup() {
   } else {
     log.info('Sibling platform run already cleared reports — skipping clean.');
     // Ensure dirs exist in case this is the very first run ever
-    for (const dir of ['./reports/allure-results', './reports/screenshots', './reports/videos', './test-results']) {
+    for (const dir of ['./reports/allure/results', './reports/screenshots', './reports/videos', './test-results']) {
       fs.mkdirSync(dir, { recursive: true });
     }
   }
@@ -55,7 +55,7 @@ module.exports = async function globalSetup() {
 
   // Write Allure environment info
   fs.writeFileSync(
-    './reports/allure-results/environment.properties',
+    './reports/allure/results/environment.properties',
     [
       `Environment=${ENV.toUpperCase()}`,
       `Platform=${OS.toUpperCase()}`,

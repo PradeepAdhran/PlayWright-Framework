@@ -64,7 +64,7 @@ if (ALLURE) {
   log.info('Generating Allure report...');
 
   const generate = spawnSync(
-    'npx', ['allure', 'generate', './reports/allure-results', '--clean', '-o', './reports/allure-report'],
+    'npx', ['allure', 'generate', './reports/allure/results', '--clean', '-o', './reports/allure-report'],
     { stdio: 'inherit', env: sharedEnv }
   );
 

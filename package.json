@@ -16,7 +16,7 @@
     "appium:install:android": "appium driver install uiautomator2",
     "appium:install:ios": "appium driver install xcuitest",
     "appium:install": "npm run appium:install:android && npm run appium:install:ios",
-    "allure:generate": "JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null) allure generate ./reports/allure-results --clean -o ./reports/allure-report",
+    "allure:generate": "JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null) allure generate ./reports/allure/results --clean -o ./reports/allure-report",
     "allure:open": "allure open ./reports/allure-report",
     "allure:report": "npm run allure:generate && npm run allure:open"
   },

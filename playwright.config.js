@@ -22,7 +22,7 @@ module.exports = defineConfig({
     ['list'],
     ['allure-playwright', {
       detail: true,
-      resultsDir: path.resolve(__dirname, 'reports/allure-results'),
+      resultsDir: path.resolve(__dirname, 'reports/allure/results'),
       suiteTitle: true,
     }],
   ],
