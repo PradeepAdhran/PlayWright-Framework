@@ -13,31 +13,38 @@ module.exports = async function globalSetup() {
   const HEADLESS    = process.env.HEADLESS === 'true';
   const APPIUM_PORT = parseInt(process.env.APPIUM_PORT || (OS === 'ios' ? '4724' : '4723'), 10);
 
+  // Each platform writes results to its own subdirectory to avoid race conditions
+  // during parallel OS=Both runs: reports/allure/results/android/ and /ios/
+  const allureResultsDir = `./reports/allure/results/${OS}`;
+
   // ── Clean previous run artifacts ───────────────────────────────────
-  // Skip clearing if a sibling platform run already cleared within the last 60s,
-  // so that parallel Android+iOS runs don't wipe each other's Allure results.
+  // Each platform cleans only its own allure subdir — no sentinel needed anymore.
+  // Shared dirs (screenshots, videos) use the old sentinel to avoid parallel wipes.
   const clearSentinel = '.last-report-clear';
   const lastClear = fs.existsSync(clearSentinel)
     ? parseInt(fs.readFileSync(clearSentinel, 'utf-8') || '0', 10)
     : 0;
+
+  // Always clear this platform's own allure results
+  fs.rmSync(allureResultsDir, { recursive: true, force: true });
+  fs.mkdirSync(allureResultsDir, { recursive: true });
+
   if (Date.now() - lastClear > 60000) {
-    const cleanDirs = [
-      './reports/allure/results',
+    const sharedDirs = [
       './reports/allure-report',
       './reports/screenshots',
       './reports/videos',
       './test-results',
     ];
-    for (const dir of cleanDirs) {
+    for (const dir of sharedDirs) {
       fs.rmSync(dir, { recursive: true, force: true });
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(clearSentinel, String(Date.now()));
-    log.info('Cleared previous run reports, screenshots and videos.');
+    log.info(`Cleared shared reports and own allure results (${OS}).`);
   } else {
-    log.info('Sibling platform run already cleared reports — skipping clean.');
-    // Ensure dirs exist in case this is the very first run ever
-    for (const dir of ['./reports/allure/results', './reports/screenshots', './reports/videos', './test-results']) {
+    log.info(`Sibling platform already cleared shared dirs — only cleared own allure results (${OS}).`);
+    for (const dir of ['./reports/screenshots', './reports/videos', './test-results']) {
       fs.mkdirSync(dir, { recursive: true });
     }
   }
@@ -53,9 +60,9 @@ module.exports = async function globalSetup() {
 
   log.debug(`Platform: ${OS.toUpperCase()} | ENV: ${ENV} | WORKERS: ${WORKERS} | HEADLESS: ${HEADLESS}`);
 
-  // Write Allure environment info
+  // Write Allure environment info into this platform's own subdir
   fs.writeFileSync(
-    './reports/allure/results/environment.properties',
+    `${allureResultsDir}/environment.properties`,
     [
       `Environment=${ENV.toUpperCase()}`,
       `Platform=${OS.toUpperCase()}`,

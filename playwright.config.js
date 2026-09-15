@@ -22,7 +22,8 @@ module.exports = defineConfig({
     ['list'],
     ['allure-playwright', {
       detail: true,
-      resultsDir: path.resolve(__dirname, 'reports/allure/results'),
+      // OS-specific subdir so parallel android+ios runs never overwrite each other
+      resultsDir: path.resolve(__dirname, `reports/allure/results/${(process.env.OS || 'android').toLowerCase()}`),
       suiteTitle: true,
     }],
   ],
