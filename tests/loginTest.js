@@ -3,6 +3,8 @@ const { HomePage } = require('../pages/HomePage');
 const { LoginPage } = require('../pages/LoginPage');
 const { LoginLocators } = require('../locators/LoginLocators');
 
+
+
 test.describe('WDIO Demo App — Login', () => {
 
   // Navigate to Login screen before each test

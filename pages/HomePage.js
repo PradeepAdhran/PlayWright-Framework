@@ -33,3 +33,4 @@ class HomePage extends BasePage {
 }
 
 module.exports = { HomePage };
+
